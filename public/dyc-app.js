@@ -375,7 +375,7 @@ V.cliente=()=>{const p=PROD[CF.model];
 let T=null;
 const SH={ /* ws: hombro (x ancho), sy: caída de hombro, ang: ángulo de manga, open: boca de manga, arm: profundidad de sisa, D: medio espesor */
   polo:{ws:0.86,sy:0.075,ang:0.98,len:0.42,open:0.34,arm:0.5,nx:0.15,dipF:0.11,dipB:0.035,D:0.17,collar:'polo'},
-  oversize:{ws:1.02,sy:0.12,ang:0.8,len:0.46,open:0.42,arm:0.6,nx:0.165,dipF:0.115,dipB:0.035,D:0.19,collar:'rib'},
+  oversize:{ws:0.95,sy:0.11,ang:0.8,len:0.46,open:0.42,arm:0.6,nx:0.165,dipF:0.115,dipB:0.035,D:0.19,collar:'rib'},
   buzo:{ws:0.88,sy:0.08,ang:1.28,len:null,open:0.19,arm:0.52,nx:0.16,dipF:0.05,dipB:0.03,D:0.18,collar:'stand',rib:true},
   casaca:{ws:0.9,sy:0.08,ang:1.28,len:null,open:0.21,arm:0.54,nx:0.17,dipF:0.05,dipB:0.03,D:0.19,collar:'stand'},
   camisa:{ws:0.9,sy:0.08,ang:1.28,len:null,open:0.2,arm:0.52,nx:0.15,dipF:0.07,dipB:0.03,D:0.18,collar:'shirt'},
@@ -396,15 +396,16 @@ function shirtPath(x,d,ext,toPx){const{W,top,hem,o,a,S,E1,E2,U}=d,e=ext?0.5:0,es
   const P=(p)=>toPx(p[0],p[1]),side=(sg)=>{const f=(p)=>[sg*p[0],p[1]];
     return{N:f([o.nx,top]),S:f(S),E1:f([E1[0]+dx,E1[1]+dy]),E2:f([E2[0]+dx,E2[1]+dy]),U:f(U),H:f([W*1.01,hem-e]),Uc:f([U[0]+0.035,U[1]+0.05])}};
   const r=side(1),l=side(-1);x.beginPath();
-  x.moveTo(...P(r.N));x.quadraticCurveTo(...P([(r.N[0]+r.S[0])/2,r.S[1]+0.035]),...P(r.S));x.lineTo(...P(r.E1));x.lineTo(...P(r.E2));
-  x.quadraticCurveTo(...P(r.Uc),...P([U[0],U[1]-0.06]));x.lineTo(...P([W*1.005,hem+0.2]));x.quadraticCurveTo(...P([W*1.01,hem-e]),...P([W*0.9,hem-e]));
+  /* solo el cuerpo: las mangas son piezas aparte (tubos) cosidas en la sisa */
+  x.moveTo(...P(r.N));x.quadraticCurveTo(...P([(r.N[0]+r.S[0])/2,r.S[1]+0.035]),...P(r.S));
+  x.bezierCurveTo(...P([S[0]+0.01,S[1]-0.16]),...P([U[0],U[1]+0.14]),...P([U[0],U[1]-0.06]));x.lineTo(...P([W*1.005,hem+0.2]));x.quadraticCurveTo(...P([W*1.01,hem-e]),...P([W*0.9,hem-e]));
   x.quadraticCurveTo(...P([0,hem-e-0.02]),...P([-W*0.9,hem-e]));x.quadraticCurveTo(...P([-W*1.01,hem-e]),...P([-W*1.005,hem+0.2]));
-  x.lineTo(...P([-U[0],U[1]-0.06]));x.quadraticCurveTo(...P(l.Uc),...P(l.E2));x.lineTo(...P(l.E1));x.lineTo(...P(l.S));
+  x.lineTo(...P([-U[0],U[1]-0.06]));x.bezierCurveTo(...P([-U[0],U[1]+0.14]),...P([-S[0]-0.01,S[1]-0.16]),...P(l.S));
   x.quadraticCurveTo(...P([(l.N[0]+l.S[0])/2,l.S[1]+0.035]),...P(l.N));x.lineTo(...P(r.N));x.closePath()}
 function neckPath(x,d,dip,toPx){const{top,o}=d;x.beginPath();x.moveTo(...toPx(-o.nx,top+0.3));x.lineTo(...toPx(-o.nx,top));
   x.bezierCurveTo(...toPx(-o.nx*0.95,top-dip*0.85),...toPx(-o.nx*0.55,top-dip),...toPx(0,top-dip));
   x.bezierCurveTo(...toPx(o.nx*0.55,top-dip),...toPx(o.nx*0.95,top-dip*0.85),...toPx(o.nx,top));x.lineTo(...toPx(o.nx,top+0.3));x.closePath()}
-function makeGrid(d){const minX=-Math.max(d.E1[0],d.E2[0],d.W*1.03)-0.06,maxX=-minX,minY=d.hem-0.06,maxY=d.top+0.06,NX=460,h=(maxX-minX)/NX,NY=Math.ceil((maxY-minY)/h);
+function makeGrid(d){const minX=-Math.max(d.S[0]+0.03,d.W*1.03)-0.06,maxX=-minX,minY=d.hem-0.06,maxY=d.top+0.06,NX=460,h=(maxX-minX)/NX,NY=Math.ceil((maxY-minY)/h);
   const toPx=(x,y)=>[(x-minX)/h,(maxY-y)/h];
   const mask=(ext,dip)=>{const c=document.createElement('canvas');c.width=NX+1;c.height=NY+1;const x=c.getContext('2d');x.fillStyle='#fff';shirtPath(x,d,ext,toPx);x.fill();
     if(dip!=null){x.globalCompositeOperation='destination-out';neckPath(x,d,dip,toPx);x.fill()}
@@ -459,7 +460,6 @@ function shade(hex,f){const c=new THREE.Color(hex);c.multiplyScalar(f);return'#'
 function paintPanel(c,d,G,front){const S=c.width,x=c.getContext('2d'),px=(X,Y)=>[(X-G.minX)/G.span*S,(1-(Y-G.minY)/G.span)*S],u=S/G.span,{W,top,hem,o,a,E1,E2}=d;
   x.setTransform(1,0,0,1,0,0);x.globalAlpha=1;x.globalCompositeOperation='source-over';x.shadowColor='transparent';x.fillStyle=CF.color;x.fillRect(0,0,S,S);
   /* variación natural del teñido y jaspeado */
-  for(let k=0;k<900;k++){x.globalAlpha=0.025;x.fillStyle=Math.random()>0.5?'#fff':'#000';const r=Math.random()*60+20;x.beginPath();x.arc(Math.random()*S,Math.random()*S,r,0,7);x.fill()}
   if(CF.color==='#9a9ca3'){for(let k=0;k<40000;k++){x.globalAlpha=0.25;x.fillStyle=Math.random()>0.5?'#c8c9cd':'#6d6f75';x.fillRect(Math.random()*S,Math.random()*S,2+Math.random()*4,1)}}
   x.globalAlpha=1;const dark=shade(CF.color,0.62),seam=(pts,dash)=>{x.save();x.setLineDash(dash||[7,5]);x.lineWidth=2.2;x.strokeStyle=dark;x.globalAlpha=0.55;x.beginPath();pts.forEach((p,i)=>x[i?'lineTo':'moveTo'](...px(...p)));x.stroke();
     x.setLineDash([]);x.globalAlpha=0.18;x.lineWidth=5;x.beginPath();pts.forEach((p,i)=>x[i?'lineTo':'moveTo'](...px(p[0],p[1]+0.004)));x.stroke();x.restore()};
@@ -470,7 +470,7 @@ function paintPanel(c,d,G,front){const S=c.width,x=c.getContext('2d'),px=(X,Y)=>
   [0.032,0.05].forEach(off=>seam([[-W*1.1,hem+off],[W*1.1,hem+off]]));
   if(o.reflect){[hem+0.22,hem+0.42].forEach(y=>{const[a0,b0]=px(-W*1.2,y+0.025),[a1,b1]=px(W*1.2,y-0.025);x.fillStyle='#c9ccd1';x.fillRect(a0,b0,a1-a0,b1-b0);
     x.globalAlpha=0.35;x.fillStyle='#fff';x.fillRect(a0,b0,a1-a0,(b1-b0)*0.35);x.globalAlpha=1;seam([[-W*1.2,y+0.022],[W*1.2,y+0.022]]);seam([[-W*1.2,y-0.022],[W*1.2,y-0.022]])})}
-  if(!o.nosleeve)[1,-1].forEach(sg=>{const cx=(E1[0]+E2[0])/2,cy=(E1[1]+E2[1])/2,ux=-Math.cos(a),uy=Math.sin(a),px1=-Math.sin(a),py1=-Math.cos(a);
+  if(false)[1,-1].forEach(sg=>{const cx=(E1[0]+E2[0])/2,cy=(E1[1]+E2[1])/2,ux=-Math.cos(a),uy=Math.sin(a),px1=-Math.sin(a),py1=-Math.cos(a);
     if(o.rib){x.save();x.translate(...px(sg*cx+sg*ux*0.06,cy+uy*0.06));x.rotate(sg*(Math.PI/2-a));x.fillStyle='#f4f4f2';x.fillRect(-0.3*u,-0.06*u,0.6*u,0.16*u);x.restore()}
     [0.03,0.048].forEach(off=>seam([[sg*(E1[0]+ux*off-px1*0.05),E1[1]+uy*off-py1*0.05],[sg*(E2[0]+ux*off+px1*0.05),E2[1]+uy*off+py1*0.05]]));
     const sp=[];for(let t=0;t<=1.0001;t+=0.1){const sx=d.S[0]-0.01+(W-0.015-d.S[0]+0.01)*Math.pow(t,0.7)*(o.ws>1?0.4:1),sy=d.S[1]+(d.U[1]-d.S[1])*t;sp.push([sg*(o.ws>1?d.S[0]-0.02-0.03*Math.sin(t*Math.PI):sx+0.035*Math.sin(t*Math.PI)),sy])}seam(sp,[1,0])});
@@ -485,7 +485,7 @@ function paintPanel(c,d,G,front){const S=c.width,x=c.getContext('2d'),px=(X,Y)=>
   /* estampados: libre, dentro de una hoja A4, rectángulo a medida o pieza completa hasta la costura */
   CF.layers.forEach(l=>{const zona=l.zona,f=zona==='toda'?'completa':(l.formato||'libre'),manga=zona.startsWith('manga');if(zona!=='toda'&&(zona==='espalda')===front)return;
     if(zona==='toda')l.mangas=true;
-    if(manga&&(o.nosleeve||f==='completa'))return;
+    if(manga)return; /* los diseños de manga se pintan en la textura de cada manga */
     const src=l.kind==='img'?l.img:textCanvas(l);if(!src||!src.width)return;const sw=src.width,sh=src.height*(l.kind==='text'?0.72:1);
     let oc,ox=0,oy=0,box=null;
     if(f==='completa'){oc=document.createElement('canvas');oc.width=oc.height=S;const q=oc.getContext('2d');
@@ -515,7 +515,41 @@ function paintPanel(c,d,G,front){const S=c.width,x=c.getContext('2d'),px=(X,Y)=>
       x.save();x.setLineDash([10,8]);x.lineWidth=3;x.strokeStyle=gc;x.strokeRect(gx,gy,gw,gh);x.setLineDash([]);
       if(!front){x.translate(gx+gw/2,0);x.scale(-1,1);x.translate(-(gx+gw/2),0)}
       x.font='600 26px Figtree, sans-serif';x.fillStyle=gc;x.fillText(f==='a4'?'A4':`${l.ancho} × ${l.alto} cm`,gx+8,gy+30);x.restore()}})}
-function bodyTexture(d){if(!T||!T.G)return;paintPanel(T.fc,d,T.G,true);paintPanel(T.bc,d,T.G,false);T.ftex.needsUpdate=true;T.btex.needsUpdate=true}
+function bodyTexture(d){if(!T||!T.G)return;paintPanel(T.fc,d,T.G,true);paintPanel(T.bc,d,T.G,false);T.ftex.needsUpdate=true;T.btex.needsUpdate=true;
+  if(!d.o.nosleeve)[1,-1].forEach((sg,i)=>{paintSleeve(T.slc[i],d,sg);T.slt[i].needsUpdate=true})}
+
+/* ---------- Mangas: tubos con caída, pliegues y bocamanga ----------
+   sg=1 es la manga izquierda de quien la viste (a la derecha en la vista frontal) */
+function sleeveAxis(d){const{S,U,a,len}=d,n=48,rc=[(S[0]+U[0])/2-0.035,(S[1]+U[1])/2+0.01],pts=[rc],angs=[];let c=rc.slice();
+  for(let j=0;j<=n;j++){const t=j/n,ang=a-0.2*Math.pow(1-Math.min(1,t/0.5),2);angs.push(ang);if(j<n){c=[c[0]+Math.cos(ang)*len/n,c[1]-Math.sin(ang)*len/n];pts.push(c)}}
+  return{pts,angs,n,rr:Math.hypot(S[0]-U[0],S[1]-U[1])/2*0.86}}
+function sleeveGeo2(d,sg){const{o}=d,ax=sleeveAxis(d),nu=96,re=o.open/2,pos=[],uv=[],idx=[];
+  for(let j=0;j<=ax.n;j++){const t=j/ax.n,ang=ax.angs[j],[cx,cy]=ax.pts[j],px=Math.sin(ang),py=Math.cos(ang),
+      r=ax.rr+(re-ax.rr)*(1-Math.pow(1-t,1.6)),sag=0.012*Math.sin(t*Math.PI);
+    for(let i=0;i<=nu;i++){const th=i/nu*2*Math.PI,ct=Math.cos(th),st=Math.sin(th);
+      /* pliegues: suaves a lo largo, más marcados en el codo y cerca de la sisa */
+      const fold=1+0.028*Math.sin(th*3+t*9+sg)*Math.sin(t*Math.PI)+0.012*Math.sin(th*7-t*14)+0.02*Math.exp(-((t-0.08)**2)/0.004)*Math.cos(th*5);
+      const rr=r*fold,x=cx+px*rr*ct,y=cy+py*rr*ct-sag*(1-ct)*0.5,z=rr*0.72*st;
+      pos.push(sg*x,y,z);uv.push(i/nu,1-t)}}
+  for(let j=0;j<ax.n;j++)for(let i=0;i<nu;i++){const a=j*(nu+1)+i,b=a+nu+1;if(sg>0)idx.push(a,b,a+1,a+1,b,b+1);else idx.push(a,a+1,b,a+1,b+1,b)}
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));g.setIndex(idx);g.computeVertexNormals();return g}
+function paintSleeve(c,d,sg){const W=c.width,H=c.height,x=c.getContext('2d'),{o,len}=d,ax=sleeveAxis(d),rm=(ax.rr+o.open/2)/2,circ=2*Math.PI*rm*0.92;
+  x.setTransform(1,0,0,1,0,0);x.globalAlpha=1;x.globalCompositeOperation='source-over';x.shadowColor='transparent';x.fillStyle=CF.color;x.fillRect(0,0,W,H);
+  if(CF.color==='#9a9ca3'){for(let k=0;k<12000;k++){x.globalAlpha=0.25;x.fillStyle=Math.random()>0.5?'#c8c9cd':'#6d6f75';x.fillRect(Math.random()*W,Math.random()*H,2+Math.random()*4,1)}x.globalAlpha=1}
+  const dark=shade(CF.color,0.62),pxU=W/circ,pxV=H/len;
+  /* bocamanga: puño de rib (buzo) o doble pespunte */
+  if(o.rib){x.fillStyle='#f4f4f2';x.fillRect(0,H-0.12*pxV,W,0.12*pxV);x.globalAlpha=0.16;x.strokeStyle='#000';x.lineWidth=1.4;for(let X=0;X<W;X+=5){x.beginPath();x.moveTo(X,H-0.12*pxV);x.lineTo(X,H);x.stroke()}x.globalAlpha=1}
+  [0.032,0.05].forEach(off=>{x.save();x.setLineDash([7,5]);x.lineWidth=2.2;x.strokeStyle=dark;x.globalAlpha=0.55;x.beginPath();x.moveTo(0,H-off*pxV);x.lineTo(W,H-off*pxV);x.stroke();x.restore()});
+  /* costura de sisa arriba */
+  x.save();x.globalAlpha=0.35;x.strokeStyle=dark;x.lineWidth=2;x.beginPath();x.moveTo(0,0.012*pxV);x.lineTo(W,0.012*pxV);x.stroke();x.restore();
+  CF.layers.forEach(l=>{const src=l.kind==='img'?l.img:textCanvas(l);if(!src||!src.width)return;const sw=src.width,sh=src.height*(l.kind==='text'?0.72:1);
+    const full=l.zona==='toda'||((l.formato||'libre')==='completa'&&l.mangas);
+    if(full){const sc=(l.fit==='contain'?Math.min:Math.max)(W/sw,H/sh);x.save();x.globalAlpha=l.tec==='Sublimado'?0.95:1;x.drawImage(src,(W-sw*sc)/2,(H-sh*sc)/2,sw*sc,sh*sc);x.restore();return}
+    if(l.zona!==(sg>0?'manga_izq':'manga_der'))return;
+    const f=l.formato||'libre';let bw=l.ancho,bh=l.ancho*sh/sw;if(f==='a4'){const v=l.orient!=='h',e=(l.escala||100)/100;bw=(v?21:29.7)*e;bh=(v?29.7:21)*e}else if(f==='rect'){bw=l.ancho;bh=l.alto||20}
+    const pw=bw/50*pxU,ph=bh/50*pxV,cy=(0.1+(2+l.dy)/50)*pxV+ph/2,cx=W*0.2+(l.dx/50)*pxU;
+    let dw=pw,dh=ph;if(f!=='libre'){const s2=Math.min(pw/sw,ph/sh);dw=sw*s2;dh=sh*s2}
+    x.save();if(l.tec==='Bordado'){x.shadowColor='rgba(0,0,0,.5)';x.shadowBlur=4;x.shadowOffsetY=2}x.translate(cx,cy);if(sg<0)x.scale(-1,1);x.drawImage(src,-dw/2,-dh/2,dw,dh);x.restore()})}
 function fabricMat(map){const L=MATLOOK[CF.mat]||MATLOOK.pq,m=new THREE.MeshPhysicalMaterial({map,normalMap:T.ntex,normalScale:new THREE.Vector2(0.55,0.55),roughness:Math.max(0.55,L.r),metalness:0,side:THREE.DoubleSide});
   if('sheen' in m)m.sheen=new THREE.Color(CF.mat==='tafe'||CF.mat==='dry'?0.05:0.22,CF.mat==='tafe'||CF.mat==='dry'?0.05:0.22,CF.mat==='tafe'||CF.mat==='dry'?0.05:0.22);
   if(CF.mat==='tafe'||CF.mat==='dry'){m.roughness=CF.mat==='tafe'?0.38:0.5;if('clearcoat' in m){m.clearcoat=CF.mat==='tafe'?0.25:0.08;m.clearcoatRoughness=0.5}}return m}
@@ -527,6 +561,7 @@ function build3D(){if(!T)return;const g=T.g;while(g.children.length){const o=g.c
   if(T.ntex)T.ntex.dispose();T.ntex=new THREE.CanvasTexture(nc);T.ntex.anisotropy=T.r.capabilities.getMaxAnisotropy();
   bodyTexture(d);
   const F=new THREE.Mesh(panelGeo(d,G,true),fabricMat(T.ftex)),B=new THREE.Mesh(panelGeo(d,G,false),fabricMat(T.btex));[F,B].forEach(m=>{m.castShadow=m.receiveShadow=true;g.add(m)});
+  if(!o.nosleeve)[1,-1].forEach((sg,i)=>{const m=new THREE.Mesh(sleeveGeo2(d,sg),fabricMat(T.slt[i]));m.castShadow=m.receiveShadow=true;g.add(m)});
   const colC=new THREE.Color(o.collar==='stand'&&o.rib?'#f4f4f2':CF.color).convertSRGBToLinear().multiplyScalar(0.9),rib=new THREE.MeshPhysicalMaterial({color:colC,roughness:0.92,normalMap:T.ntex,side:THREE.DoubleSide});
   if('sheen' in rib)rib.sheen=new THREE.Color(0.2,0.2,0.2);
   const neckCurve=(dip,front,lift)=>{const pts=[];for(let t=0;t<=1.0001;t+=1/40){const s=t*2-1,xx=o.nx*s,base=Math.pow(Math.abs(s),1.6),yy=top-dip*(1-base)+lift;
@@ -538,8 +573,7 @@ function build3D(){if(!T)return;const g=T.g;while(g.children.length){const o=g.c
     const b=new THREE.Mesh(new THREE.CylinderGeometry(0.012,0.012,0.007,24),bm);b.rotation.x=Math.PI/2;b.position.set(bx,y,zAt(d,G,bx,y,true)+0.006);b.castShadow=true;g.add(b)}})};
   if(o.collar==='shirt')btns([0],top-o.dipF-0.05,hem+0.1,0.16);
   if(o.chef)btns([-0.13,0.13],top-o.dipF-0.06,hem+0.25,0.14);
-  if(o.collar==='stand'&&!o.chef){const ring2=neckCurve(o.dipF,true,lift+0.055).concat(neckCurve(o.dipB,false,lift+0.055).reverse().slice(1));
-    g.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(ring2,true),220,rad*0.9,18,true),rib));
+  if(o.collar==='stand'&&!o.chef){
     const zp=[];for(let y=top-o.dipF+lift+0.05;y>=hem+0.005;y-=0.02)zp.push(new THREE.Vector3(0,y,zAt(d,G,0,y,true)+0.006));
     const metal=new THREE.MeshPhysicalMaterial({color:0xc9ccd2,metalness:1,roughness:0.28});const zip=new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(zp),200,0.007,8,false),metal);zip.scale.x=1.6;g.add(zip);
     const pull=new THREE.Mesh(new THREE.BoxGeometry(0.022,0.07,0.008),metal);pull.position.copy(zp[1]).add(new THREE.Vector3(0,-0.04,0.012));pull.rotation.x=-0.25;g.add(pull)}
@@ -550,7 +584,7 @@ function build3D(){if(!T)return;const g=T.g;while(g.children.length){const o=g.c
 function init3D(){const box=document.getElementById('v3d');if(!box)return;
   if(!window.THREE){box.innerHTML='<p class="muted" style="padding:16px">No se pudo cargar el visor 3D.</p>';return}
   if(!T){const r=new THREE.WebGLRenderer({antialias:true,alpha:true});r.setPixelRatio(Math.min(3,Math.max(2,window.devicePixelRatio||1)));
-    r.outputEncoding=THREE.sRGBEncoding;r.toneMapping=THREE.ACESFilmicToneMapping;r.toneMappingExposure=1.08;r.shadowMap.enabled=true;r.shadowMap.type=THREE.PCFSoftShadowMap;r.physicallyCorrectLights=false;
+    r.outputEncoding=THREE.sRGBEncoding;r.toneMapping=THREE.ACESFilmicToneMapping;r.toneMappingExposure=0.82;r.shadowMap.enabled=true;r.shadowMap.type=THREE.PCFSoftShadowMap;r.physicallyCorrectLights=false;
     const sc=new THREE.Scene(),cam=new THREE.PerspectiveCamera(26,1,0.1,50);cam.position.set(0,0.03,4.6);
     const pm=new THREE.PMREMGenerator(r),env=new THREE.Scene();env.add(new THREE.Mesh(new THREE.SphereGeometry(10,32,16),new THREE.MeshBasicMaterial({color:0x2c2c2e,side:THREE.BackSide})));
     const panel=(w,h,x,y,z,i)=>{const m=new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({color:new THREE.Color(i,i,i),side:THREE.DoubleSide}));m.position.set(x,y,z);m.lookAt(0,0,0);env.add(m)};
@@ -560,7 +594,9 @@ function init3D(){const box=document.getElementById('v3d');if(!box)return;
     const fill=new THREE.DirectionalLight(0xe8eeff,0.25);fill.position.set(-3,0.5,2);sc.add(fill);const rim=new THREE.DirectionalLight(0xffffff,0.45);rim.position.set(0,2,-4);sc.add(rim);
     const mk=()=>{const c=document.createElement('canvas');c.width=c.height=2048;const t=new THREE.CanvasTexture(c);t.encoding=THREE.sRGBEncoding;t.anisotropy=r.capabilities.getMaxAnisotropy();return[c,t]};
     const[fc,ftex]=mk(),[bc,btex]=mk();const g=new THREE.Group();sc.add(g);
-    T={r,sc,cam,g,key,fc,ftex,bc,btex,rot:-0.32,tilt:0.04,target:null,drag:false,lx:0,ly:0,idle:0,zoom:4.6};
+    const mk2=()=>{const c=document.createElement('canvas');c.width=1024;c.height=1024;const t=new THREE.CanvasTexture(c);t.encoding=THREE.sRGBEncoding;t.anisotropy=r.capabilities.getMaxAnisotropy();return[c,t]};
+    const[s1c,s1t]=mk2(),[s2c,s2t]=mk2();
+    T={r,sc,cam,g,key,fc,ftex,bc,btex,slc:[s1c,s2c],slt:[s1t,s2t],rot:-0.32,tilt:0.04,target:null,drag:false,lx:0,ly:0,idle:0,zoom:4.6};
     const c=r.domElement;c.style.display='block';
     c.addEventListener('pointerdown',e=>{T.drag=true;T.target=null;T.lx=e.clientX;T.ly=e.clientY;c.setPointerCapture(e.pointerId);c.style.cursor='grabbing'});
     c.addEventListener('pointermove',e=>{if(!T.drag)return;T.rot+=(e.clientX-T.lx)*0.011;T.tilt=Math.max(-0.5,Math.min(0.5,T.tilt+(e.clientY-T.ly)*0.006));T.lx=e.clientX;T.ly=e.clientY});
