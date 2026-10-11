@@ -33,3 +33,12 @@ App de producción, abastecimiento y configurador 3D para Grupo DYC (Unicrack Sc
 Los datos (pedidos, usuarios, precios) se guardan en el navegador (`localStorage`) y los permisos se revisan en el navegador.
 Para producción hay que mover usuarios, pedidos y precios a una base de datos con login real (por ejemplo Supabase o Firebase)
 y validar los permisos en el servidor.
+
+## Mejoras v2
+
+Modelo de datos, navegación por rol e implementación: ver docs/MEJORAS.md. Para los correos de alerta configura SMTP_* en .env.local.
+
+## Mejoras v3
+
+Estados, cronómetro por etapa, calidad, talleres, Excel, gráfico de costos y permisos persistentes: ver docs/MEJORAS-v3.md.
+Los datos se guardan en data/db.json (se crea solo al usar la app).

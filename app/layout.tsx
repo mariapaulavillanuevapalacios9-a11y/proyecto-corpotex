@@ -21,6 +21,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {children}
         {/* Three.js r128 para el visor 3D (se carga antes que la app) */}
         <Script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" strategy="beforeInteractive" />
+        {/* Exportar tablas a Excel y gráfico de costos */}
+        <Script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" strategy="beforeInteractive" />
+        <Script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" strategy="beforeInteractive" />
       </body>
     </html>
   );
